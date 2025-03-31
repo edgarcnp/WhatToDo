@@ -22,6 +22,6 @@ async fn main() -> Result<()> {
 
     // Start the server
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("Listening on 0.0.0.0:3000");
+    println!("Listening on http://0.0.0.0:3000");
     Ok(axum::serve(listener, router).await.unwrap())
 }
