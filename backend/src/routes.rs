@@ -5,6 +5,7 @@ use axum::{
     routing::{delete, get, post, put},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sqlx::{SqlitePool, query_as};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -22,6 +23,11 @@ pub struct Todo {
 #[derive(Deserialize)]
 pub struct CreateTodo {
     description: String,
+}
+
+#[derive(Serialize)]
+struct ResponseMessage {
+    message: String,
 }
 
 pub fn app_routes(pool: DbState) -> Router {
@@ -68,7 +74,7 @@ async fn create_todo(
 async fn delete_todo(
     State(pool): State<DbState>,
     Path(id): Path<i64>,
-) -> Result<String, StatusCode> {
+) -> Result<Json<ResponseMessage>, StatusCode> {
     let result = sqlx::query!("DELETE FROM todos WHERE id = ?", id)
         .execute(&*pool)
         .await
@@ -78,13 +84,15 @@ async fn delete_todo(
         return Err(StatusCode::NOT_FOUND);
     }
 
-    Ok("Task successfully deleted!".to_string())
+    Ok(Json(ResponseMessage {
+        message: "Task successfully deleted!".to_string(),
+    }))
 }
 
 async fn update_todo(
     State(pool): State<DbState>,
     Form(todo): Form<Todo>,
-) -> Result<String, StatusCode> {
+) -> Result<Json<ResponseMessage>, StatusCode> {
     let result = sqlx::query!(
         "UPDATE todos SET description = ?, status = ? WHERE id = ?",
         todo.description,
@@ -99,5 +107,7 @@ async fn update_todo(
         return Err(StatusCode::NOT_FOUND);
     }
 
-    Ok("Task successfully updated!".to_string())
+    Ok(Json(ResponseMessage {
+        message: "Task successfully updated!".to_string(),
+    }))
 }
