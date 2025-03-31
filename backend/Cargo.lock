@@ -165,10 +165,12 @@ dependencies = [
  "axum 0.8.3",
  "axum-error",
  "dotenv",
+ "hyper 1.6.0",
  "serde",
  "serde_json",
  "sqlx",
  "tokio",
+ "tower 0.5.2",
  "tower-http",
 ]
 
