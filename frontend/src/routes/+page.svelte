@@ -14,7 +14,7 @@
     // Update todo
     async function updateTodo(todo: Todo) {
         await fetch(
-            `http://0.0.0.0:8000/update?id=${todo.id}&description=${todo.description}&done=${todo.done}`,
+            `http://0.0.0.0:8000/update?id=${todo.id}&description=${todo.description}&status=${todo.status}`,
         );
     }
 </script>
@@ -41,14 +41,14 @@
                     <input
                         class="checkbox"
                         type="checkbox"
-                        bind:checked={todo.done}
+                        bind:checked={todo.status}
                         on:change={updateTodo(todo)}
                     />
                     <input
                         class="input"
                         type="text"
                         bind:value={todo.description}
-                        disabled={todo.done}
+                        disabled={todo.status}
                     />
 
                     <div class="flex gap-2">
