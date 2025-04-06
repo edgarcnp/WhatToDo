@@ -167,7 +167,6 @@ dependencies = [
  "dotenv",
  "hyper 1.6.0",
  "serde",
- "serde_json",
  "sqlx",
  "tokio",
  "tower 0.5.2",
