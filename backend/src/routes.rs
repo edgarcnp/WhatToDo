@@ -8,6 +8,7 @@ use axum::{
     routing::{delete, get, post, put},
 };
 use serde::{Deserialize, Serialize};
+
 use sqlx::{SqlitePool, query_as};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
