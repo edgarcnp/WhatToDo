@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::serve;
 use axum_error::Result;
-use sqlx::{pool, sqlite::SqlitePool};
+use sqlx::sqlite::SqlitePool;
 use tokio::net::TcpListener;
 
 mod routes;
