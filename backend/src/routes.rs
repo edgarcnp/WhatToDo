@@ -1,11 +1,14 @@
+use axum::body::HttpBody;
+use axum::http::Response;
 use axum::{
     Form, Json, Router,
+    body::Body,
     extract::{Path, State},
-    http::StatusCode,
+    http::{Request, StatusCode},
     routing::{delete, get, post, put},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use sqlx::{SqlitePool, query_as};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -35,7 +38,7 @@ pub fn app_routes(pool: DbState) -> Router {
         .route("/", get(list_todo))
         .route("/create", post(create_todo))
         .route("/update", put(update_todo))
-        .route("/delete/:id", delete(delete_todo))
+        .route("/delete/{id}", delete(delete_todo))
         .layer(CorsLayer::very_permissive())
         .with_state(pool)
 }
@@ -110,4 +113,87 @@ async fn update_todo(
     Ok(Json(ResponseMessage {
         message: "Task successfully updated!".to_string(),
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::Router;
+    use axum::body::Body;
+    use hyper::Request;
+    use sqlx::SqlitePool;
+    use tokio::sync::OnceCell;
+    use tower::ServiceExt;
+
+    static DB_POOL: OnceCell<DbState> = OnceCell::const_new();
+
+    async fn setup() -> Router {
+        let pool = SqlitePool::connect("sqlite::memory:?cache=shared")
+            .await
+            .unwrap();
+        sqlx::query!("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, description TEXT, status BOOLEAN)")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let shared_pool = Arc::new(pool);
+        DB_POOL.set(shared_pool.clone()).ok();
+
+        app_routes(shared_pool)
+    }
+
+    #[tokio::test]
+    async fn test_list_todo() {
+        let app = setup().await;
+        let response = app
+            .clone()
+            .oneshot(Request::get("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_create_todo() {
+        let app = setup().await;
+        let request = Request::post("/create")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(Body::from("description=Test Task"))
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_update_todo() {
+        let app = setup().await;
+        let create_request = Request::post("/create")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(Body::from("description=Test Task"))
+            .unwrap();
+        let _ = app.clone().oneshot(create_request).await.unwrap();
+
+        let update_request = Request::put("/update")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(Body::from("id=1&description=Updated Task&status=true"))
+            .unwrap();
+
+        let response = app.clone().oneshot(update_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_delete_todo() {
+        let app = setup().await;
+        let create_request = Request::post("/create")
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(Body::from("description=Test Task"))
+            .unwrap();
+        let _ = app.clone().oneshot(create_request).await.unwrap();
+
+        let delete_request = Request::delete("/delete/1").body(Body::empty()).unwrap();
+        let response = app.clone().oneshot(delete_request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
 }

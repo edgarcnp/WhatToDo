@@ -8,16 +8,19 @@ axum = { version = "0.8", features = ["form"] }
 axum-error = "0.2"
 dotenv = "0.15"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "sqlite"] }
 tokio = { version = "1.44", features = ["full"] }
-tower-http = { version = "0.6.2", features = ["cors"] }
+tower-http = { version = "0.6", features = ["cors"] }
+
+[dev-dependencies]
+tower = "0.5"
+hyper = "1.6"
 
 [profile.release]
-opt-level = 3          # Maximum optimization (0-3, s, z)
-lto = "thin"           # Enable Link-Time Optimization (LTO)
-codegen-units = 1      # Single codegen unit for better optimizations
-panic = "abort"        # Reduce binary size by removing unwinding
-strip = "symbols"      # Remove debug symbols (use "debuginfo" if needed)
-debug = false          # No debug info for smaller binary (set to true for backtraces)
-incremental = false    # Disable incremental builds for optimized final binary
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+debug = false
+incremental = false
