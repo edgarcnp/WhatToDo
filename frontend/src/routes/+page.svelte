@@ -1,21 +1,39 @@
 <script lang="ts">
     import type { PageData } from "./$types";
+    import { goto } from "$app/navigation";
 
-    // Get todos from page load
+    type Todo = {
+        id: number;
+        description: string;
+        status: boolean;
+    };
+
     export let data: PageData;
     let todos = data.todos;
 
-    // Delete todo
     async function deleteTodo(id: number) {
-        await fetch(`http://0.0.0.0:8000/delete/${id}`, { method: "POST" });
-        todos = todos.filter((todo) => todo.id !== id);
+        await fetch(`http://0.0.0.0:8000/delete/${id}`, {
+            method: "DELETE",
+        });
+        todos = todos.filter((todo: Todo) => todo.id !== id);
     }
 
-    // Update todo
     async function updateTodo(todo: Todo) {
-        await fetch(
-            `http://0.0.0.0:8000/update?id=${todo.id}&description=${todo.description}&status=${todo.status}`,
-        );
+        const form = new URLSearchParams();
+        form.append("id", String(todo.id));
+        form.append("description", todo.description);
+        form.append("status", String(todo.status));
+
+        await fetch("http://0.0.0.0:8000/update", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: form.toString(),
+        });
+
+        // Optional: force page reload to refresh data
+        await goto("/");
     }
 </script>
 
@@ -42,7 +60,7 @@
                         class="checkbox"
                         type="checkbox"
                         bind:checked={todo.status}
-                        on:change={updateTodo(todo)}
+                        on:change={() => updateTodo(todo)}
                     />
                     <input
                         class="input"
@@ -54,12 +72,18 @@
                     <div class="flex gap-2">
                         <button
                             class="btn variant-filled-secondary"
-                            on:click={updateTodo(todo)}>Update</button
+                            on:click={() => updateTodo(todo)}
+                            type="button"
                         >
+                            Update
+                        </button>
                         <button
                             class="btn variant-filled-primary"
-                            on:click={deleteTodo(todo.id)}>Delete</button
+                            on:click={() => deleteTodo(todo.id)}
+                            type="button"
                         >
+                            Delete
+                        </button>
                     </div>
                 </div>
             {/each}
