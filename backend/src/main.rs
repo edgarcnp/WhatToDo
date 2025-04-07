@@ -1,4 +1,3 @@
-#![allow(unused)] // Remove later
 use std::sync::Arc;
 
 use axum::serve;
