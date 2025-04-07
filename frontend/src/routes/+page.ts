@@ -1,7 +1,13 @@
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async () => {
-    return {
-        todos: await fetch("http://0.0.0.0:3000").then((data) => data.json())
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}`);
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch todos");
     }
-}
+
+    return {
+        todos: await res.json()
+    };
+};
