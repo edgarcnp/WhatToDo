@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-    import { goto } from "$app/navigation";
 
     type Todo = {
         id: number;
@@ -8,32 +7,43 @@
         status: boolean;
     };
 
+    // Get todos from page load
     export let data: PageData;
     let todos = data.todos;
+    let newDescription = "";
 
-    async function deleteTodo(id: number) {
-        await fetch(`http://0.0.0.0:8000/delete/${id}`, {
-            method: "DELETE",
+    // Create todo
+    async function createTodo() {
+        const res = await fetch("http://0.0.0.0:3000/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ description: newDescription }),
         });
-        todos = todos.filter((todo: Todo) => todo.id !== id);
+
+        if (res.ok) {
+            const newTodo: Todo = await res.json();
+            todos = [...todos, newTodo];
+            newDescription = "";
+        }
     }
 
+    // Update todo
     async function updateTodo(todo: Todo) {
-        const form = new URLSearchParams();
-        form.append("id", String(todo.id));
-        form.append("description", todo.description);
-        form.append("status", String(todo.status));
-
-        await fetch("http://0.0.0.0:8000/update", {
+        await fetch("http://0.0.0.0:3000/update", {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: form.toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                id: todo.id.toString(),
+                description: todo.description,
+                status: todo.status.toString(),
+            }),
         });
+    }
 
-        // Optional: force page reload to refresh data
-        await goto("/");
+    // Delete todo
+    async function deleteTodo(id: number) {
+        await fetch(`http://0.0.0.0:3000/delete/${id}`, { method: "DELETE" });
+        todos = todos.filter((todo: Todo) => todo.id !== id);
     }
 </script>
 
@@ -41,15 +51,20 @@
     <h1 class="h1 text-center">Todos</h1>
 
     <div class="max-w-screen-md mx-auto">
-        <form action="http://0.0.0.0:8000/create" method="POST">
+        <div class="flex gap-4 my-8">
             <input
-                class="input p-4 my-8"
+                class="input flex-1 p-4"
                 name="description"
                 type="text"
                 placeholder="What needs to be done?"
+                bind:value={newDescription}
                 autocomplete="off"
+                on:keypress={(e) => e.key === "Enter" && createTodo()}
             />
-        </form>
+            <button class="btn variant-filled-primary" on:click={createTodo}
+                >Add</button
+            >
+        </div>
 
         <div class="space-y-4">
             {#each todos as todo}
@@ -72,18 +87,12 @@
                     <div class="flex gap-2">
                         <button
                             class="btn variant-filled-secondary"
-                            on:click={() => updateTodo(todo)}
-                            type="button"
+                            on:click={() => updateTodo(todo)}>Update</button
                         >
-                            Update
-                        </button>
                         <button
                             class="btn variant-filled-primary"
-                            on:click={() => deleteTodo(todo.id)}
-                            type="button"
+                            on:click={() => deleteTodo(todo.id)}>Delete</button
                         >
-                            Delete
-                        </button>
                     </div>
                 </div>
             {/each}
